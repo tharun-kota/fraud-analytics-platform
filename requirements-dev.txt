@@ -1,0 +1,10 @@
+pandas
+pyarrow
+matplotlib
+seaborn
+jupyter
+ipykernel
+pyspark>=4.0,<4.1
+delta-spark>=4.0,<4.1
+pytest
+ruff
