@@ -19,3 +19,6 @@ local.settings.json
 # Editor and OS
 .vscode/
 .DS_Store
+
+data/processed/
+*.parquet
