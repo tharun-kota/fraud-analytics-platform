@@ -22,3 +22,6 @@ local.settings.json
 
 data/processed/
 *.parquet
+
+data/landing/
+data/stream/
