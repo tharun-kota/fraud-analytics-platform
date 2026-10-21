@@ -26,7 +26,9 @@ From `notebooks/eda/01_paysim_eda.ipynb` (6.36M transactions):
 - [x] Exploratory data analysis
 - [x] Daily batch / streaming split script
 - [x] Local Spark and Delta Lake test setup
-- [ ] Bronze, silver and gold transforms (local, tested)
+- [x] Bronze transform with lineage columns (local, tested)
+- [x] Silver transform with fraud rule (local, tested)
+- [ ] Gold star schema and aggregates (local, tested)
 - [ ] CI pipeline
 - [ ] Azure infrastructure (Bicep)
 - [ ] Data Factory ingestion
@@ -48,6 +50,7 @@ From `notebooks/eda/01_paysim_eda.ipynb` (6.36M transactions):
 | `streaming/` | Event Hubs replay script |
 | `pipelines/` | Azure Pipelines CI/CD |
 | `docs/` | Design notes, monitoring queries, screenshots |
+| `scripts/` | Local runners that build the medallion tables on a laptop |
 
 ## Running locally
 
@@ -58,6 +61,7 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
 python data/split_paysim.py
 pytest -v
+python scripts/run_local_silver.py
 ```
 
 ## Data
