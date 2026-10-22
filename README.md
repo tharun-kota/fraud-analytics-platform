@@ -28,7 +28,7 @@ From `notebooks/eda/01_paysim_eda.ipynb` (6.36M transactions):
 - [x] Local Spark and Delta Lake test setup
 - [x] Bronze transform with lineage columns (local, tested)
 - [x] Silver transform with fraud rule (local, tested)
-- [ ] Gold star schema and aggregates (local, tested)
+- [x] Gold star schema and aggregates (local, tested)
 - [ ] CI pipeline
 - [ ] Azure infrastructure (Bicep)
 - [ ] Data Factory ingestion
@@ -62,6 +62,7 @@ pip install -r requirements-dev.txt
 python data/split_paysim.py
 pytest -v
 python scripts/run_local_silver.py
+python scripts/run_local_gold.py
 ```
 
 ## Data
