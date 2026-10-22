@@ -2,7 +2,8 @@ import datetime
 
 from transforms.bronze import BRONZE_SCHEMA, add_bronze_metadata
 from transforms.gold import (
-     build_dim_account, build_dim_date, build_dim_time,
+    build_agg_account_risk, build_agg_fraud_daily, build_agg_rule_performance,
+    build_dim_account, build_dim_date, build_dim_time,
     build_dim_transaction_type, build_fact_transactions,
 )
 from transforms.silver import transform_silver
@@ -57,3 +58,31 @@ def test_fact_matches_silver_and_links_to_dimensions(spark):
     linked = fact.join(accounts, fact.orig_account_key == accounts.account_key)
     assert linked.count() == fact.count()
     #assert account_key  # helper is importable for the dashboard model docs
+    
+def fact(spark):
+    return build_fact_transactions(silver(spark), build_dim_transaction_type(spark))
+
+
+def test_agg_fraud_daily(spark):
+    rows = build_agg_fraud_daily(fact(spark)).collect()
+    assert len(rows) == 3  # (day 1, TRANSFER), (day 1, CASH_OUT), (day 3, PAYMENT)
+    assert sum(r["fraud_count"] for r in rows) == 2
+    payment = [r for r in rows if r["date_key"] == 20260103][0]
+    assert payment["fraud_rate"] == 0
+
+
+def test_agg_rule_performance(spark):
+    rows = {(r["date_key"], r["rule_name"]): r for r in build_agg_rule_performance(fact(spark)).collect()}
+    v1 = rows[(20260101, "rule_v1")]
+    assert (v1["true_positives"], v1["false_positives"], v1["false_negatives"]) == (2, 0, 0)
+    assert v1["precision"] == 1.0 and v1["recall"] == 1.0
+    legacy = rows[(20260101, "legacy")]
+    assert legacy["false_negatives"] == 2
+    assert legacy["precision"] is None  # flagged nothing: 0 / 0
+    assert legacy["recall"] == 0.0
+
+
+def test_agg_account_risk_keeps_only_risky_senders(spark):
+    rows = build_agg_account_risk(fact(spark)).collect()
+    assert len(rows) == 2  # C1 and C2 each sent one fraud
+    assert sum(r["fraud_txn_count"] for r in rows) == 2

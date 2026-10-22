@@ -91,3 +91,56 @@ def build_fact_transactions(silver: DataFrame, dim_type: DataFrame) -> DataFrame
             F.col("_ingest_path").alias("ingest_path"),
         )
     )
+    
+RULES = {"rule_v1": "rule_flag", "legacy": "is_flagged_legacy"}
+
+
+def build_agg_fraud_daily(fact: DataFrame) -> DataFrame:
+    is_fraud = F.col("is_fraud") == 1
+    return (
+        fact.groupBy("date_key", "type_key")
+        .agg(
+            F.count("*").alias("txn_count"),
+            F.sum("amount").alias("txn_amount"),
+            F.sum(is_fraud.cast("int")).alias("fraud_count"),
+            F.sum(F.when(is_fraud, F.col("amount")).otherwise(0)).alias("fraud_amount"),
+        )
+        .withColumn("fraud_rate", F.try_divide(F.col("fraud_count"), F.col("txn_count")))
+    )
+
+
+def build_agg_rule_performance(fact: DataFrame) -> DataFrame:
+    fraud = F.col("is_fraud") == 1
+    parts = []
+    for rule_name, flag_column in RULES.items():
+        flagged = F.col(flag_column) == 1
+        parts.append(
+            fact.groupBy("date_key")
+            .agg(
+                F.sum((flagged & fraud).cast("int")).alias("true_positives"),
+                F.sum((flagged & ~fraud).cast("int")).alias("false_positives"),
+                F.sum((~flagged & fraud).cast("int")).alias("false_negatives"),
+            )
+            .withColumn("rule_name", F.lit(rule_name))
+        )
+    combined = parts[0].unionByName(parts[1])
+    tp, fp, fn = F.col("true_positives"), F.col("false_positives"), F.col("false_negatives")
+    return (
+        combined.withColumn("precision", F.try_divide(tp, tp + fp))
+                .withColumn("recall", F.try_divide(tp, tp + fn))
+                .select("date_key", "rule_name", "true_positives", "false_positives",
+                        "false_negatives", "precision", "recall")
+    )
+
+
+def build_agg_account_risk(fact: DataFrame) -> DataFrame:
+    return (
+        fact.groupBy(F.col("orig_account_key").alias("account_key"))
+        .agg(
+            F.sum("is_fraud").alias("fraud_txn_count"),
+            F.sum("rule_flag").alias("flagged_txn_count"),
+            F.sum("amount").alias("total_out_amount"),
+            F.sum(F.col("orig_drained").cast("int")).alias("drained_count"),
+        )
+        .filter((F.col("fraud_txn_count") > 0) | (F.col("flagged_txn_count") > 0))
+    )
