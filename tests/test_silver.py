@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from transforms.bronze import BRONZE_SCHEMA, add_bronze_metadata
 from transforms.silver import transform_silver, transform_silver_core
+
 ROWS = [
     ("1", "TRANSFER", "181.0", "C1", "181.0", "0.0", "C2", "0.0", "0.0", "1", "0"),
     ("25", "PAYMENT", "9839.64", "C3", "170136.0", "160296.36", "M1", "0.0", "0.0", "0", "0"),
@@ -53,8 +54,8 @@ def test_transaction_id_is_deterministic_and_unique(spark):
 def test_invalid_amount_becomes_null_not_error(spark):
     rows = by_orig(silver(spark))
     assert rows["C6"]["amount"] is None
-    
-    
+
+
 SIGNAL_ROWS = [
     # orig: full-balance transfer (classic fraud)
     ("1", "TRANSFER", "181.0", "F1", "181.0", "0.0", "C2", "0.0", "0.0", "1", "0"),

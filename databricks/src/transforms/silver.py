@@ -48,10 +48,13 @@ def add_account_columns(df: DataFrame) -> DataFrame:
     """Label the destination type and null out merchant balances (never recorded)."""
     is_merchant = F.col("dest_account_id").startswith("M")
     no_balance = F.lit(None).cast(MONEY)
+    def known_balance(column: str):
+        return F.when(is_merchant, no_balance).otherwise(F.col(column))
+
     return (
         df.withColumn("dest_account_type", F.when(is_merchant, "merchant").otherwise("customer"))
-          .withColumn("dest_balance_before", F.when(is_merchant, no_balance).otherwise(F.col("dest_balance_before")))
-          .withColumn("dest_balance_after", F.when(is_merchant, no_balance).otherwise(F.col("dest_balance_after")))
+          .withColumn("dest_balance_before", known_balance("dest_balance_before"))
+          .withColumn("dest_balance_after", known_balance("dest_balance_after"))
     )
 
 

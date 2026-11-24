@@ -3,7 +3,6 @@ import time
 
 from local_spark import get_spark
 from pyspark.sql import functions as F
-
 from quality.rules import apply_hard_rules  # noqa: E402
 from transforms.silver import transform_silver  # noqa: E402
 
