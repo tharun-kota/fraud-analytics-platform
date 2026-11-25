@@ -1,0 +1,35 @@
+# CI: lint and test every pull request into main.
+# Azure Repos ignores `pr:` triggers in YAML, so pull request runs are
+# enforced by the build validation branch policy on main instead.
+trigger: none
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - task: UsePythonVersion@0
+    displayName: Use Python 3.12
+    inputs:
+      versionSpec: "3.12"
+
+  - script: echo "##vso[task.setvariable variable=JAVA_HOME]$(JAVA_HOME_17_X64)"
+    displayName: Use Java 17 (needed by Spark)
+
+  - script: |
+      python -m pip install --upgrade pip
+      pip install -r requirements-dev.txt
+    displayName: Install dependencies
+
+  - script: ruff check .
+    displayName: Lint (ruff)
+
+  - script: pytest -v --junitxml=test-results.xml
+    displayName: Run tests (pytest)
+
+  - task: PublishTestResults@2
+    displayName: Publish test results
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFormat: JUnit
+      testResultsFiles: test-results.xml
+      testRunTitle: Unit tests
