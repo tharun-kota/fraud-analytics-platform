@@ -59,7 +59,9 @@ def build_dim_account(silver: DataFrame) -> DataFrame:
         .select(
             account_key(F.col("account_id")).alias("account_key"),
             "account_id",
-            F.when(F.col("account_id").startswith("M"), "merchant").otherwise("customer").alias("account_type"),
+            F.when(F.col("account_id").startswith("M"), "merchant")
+             .otherwise("customer")
+             .alias("account_type"),
             F.least("first_out", "first_in").alias("first_seen_ts"),
             F.greatest("last_out", "last_in").alias("last_seen_ts"),
             F.coalesce("txn_count_out", F.lit(0)).alias("txn_count_out"),
@@ -91,7 +93,7 @@ def build_fact_transactions(silver: DataFrame, dim_type: DataFrame) -> DataFrame
             F.col("_ingest_path").alias("ingest_path"),
         )
     )
-    
+
 RULES = {"rule_v1": "rule_flag", "legacy": "is_flagged_legacy"}
 
 

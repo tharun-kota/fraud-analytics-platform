@@ -1,0 +1,6 @@
+line-length = 110
+target-version = "py312"
+extend-exclude = ["notebooks", "data/landing", "data/stream", "data/delta", "data/processed"]
+
+[lint]
+select = ["E", "F", "W", "I"]

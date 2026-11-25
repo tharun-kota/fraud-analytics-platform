@@ -2,9 +2,14 @@ import datetime
 
 from transforms.bronze import BRONZE_SCHEMA, add_bronze_metadata
 from transforms.gold import (
-    build_agg_account_risk, build_agg_fraud_daily, build_agg_rule_performance,
-    build_dim_account, build_dim_date, build_dim_time,
-    build_dim_transaction_type, build_fact_transactions,
+    build_agg_account_risk,
+    build_agg_fraud_daily,
+    build_agg_rule_performance,
+    build_dim_account,
+    build_dim_date,
+    build_dim_time,
+    build_dim_transaction_type,
+    build_fact_transactions,
 )
 from transforms.silver import transform_silver
 
@@ -58,7 +63,7 @@ def test_fact_matches_silver_and_links_to_dimensions(spark):
     linked = fact.join(accounts, fact.orig_account_key == accounts.account_key)
     assert linked.count() == fact.count()
     #assert account_key  # helper is importable for the dashboard model docs
-    
+
 def fact(spark):
     return build_fact_transactions(silver(spark), build_dim_transaction_type(spark))
 

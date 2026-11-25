@@ -13,7 +13,9 @@ def hard_rules() -> dict[str, Column]:
         "unknown_type": F.col("txn_type").isin(VALID_TYPES),
         "invalid_amount": F.col("amount") >= 0,
         "invalid_orig_account": F.col("orig_account_id").startswith("C"),
-        "invalid_dest_account": F.col("dest_account_id").startswith("C") | F.col("dest_account_id").startswith("M"),
+        "invalid_dest_account": (
+            F.col("dest_account_id").startswith("C") | F.col("dest_account_id").startswith("M")
+        ),
         "invalid_fraud_label": F.col("is_fraud").isin(0, 1),
         "invalid_legacy_flag": F.col("is_flagged_legacy").isin(0, 1),
     }

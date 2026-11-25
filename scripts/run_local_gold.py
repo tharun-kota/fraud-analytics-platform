@@ -3,11 +3,15 @@ import time
 
 from local_spark import get_spark
 from pyspark.sql import functions as F
-
 from transforms.gold import (  # noqa: E402
-    build_agg_account_risk, build_agg_fraud_daily, build_agg_rule_performance,
-    build_dim_account, build_dim_date, build_dim_time,
-    build_dim_transaction_type, build_fact_transactions,
+    build_agg_account_risk,
+    build_agg_fraud_daily,
+    build_agg_rule_performance,
+    build_dim_account,
+    build_dim_date,
+    build_dim_time,
+    build_dim_transaction_type,
+    build_fact_transactions,
 )
 
 SILVER_PATH = "data/delta/silver/transactions"
@@ -50,12 +54,14 @@ if __name__ == "__main__":
         print(f"{name:<22} {df.count():>12,} rows")
 
     # 4. Reconciliation checks (gold hard DQ rules)
+    missing_keys = fact.filter("type_key IS NULL OR date_key IS NULL OR hour_key IS NULL").count()
+    aggregate_fraud = total(tables["agg_fraud_daily"], "fraud_count")
     checks = {
         "fact rows = silver rows": fact.count() == silver.count(),
         "fraud count matches silver": total(fact, "is_fraud") == total(silver, "is_fraud"),
         "rule flag count matches silver": total(fact, "rule_flag") == total(silver, "rule_flag"),
-        "no missing keys in fact": fact.filter("type_key IS NULL OR date_key IS NULL OR hour_key IS NULL").count() == 0,
-        "daily aggregate fraud = fact fraud": total(tables["agg_fraud_daily"], "fraud_count") == total(fact, "is_fraud"),
+        "no missing keys in fact": missing_keys == 0,
+        "daily aggregate fraud = fact fraud": aggregate_fraud == total(fact, "is_fraud"),
     }
     for name, passed in checks.items():
         print(f"{'PASS' if passed else 'FAIL'}  {name}")
